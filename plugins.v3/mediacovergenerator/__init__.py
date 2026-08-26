@@ -590,7 +590,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             {"path": "saved_cover_image", "endpoint": self.api_saved_cover_image, "methods": ["GET"], "summary": "获取已保存封面图片(兼容)"},
         ]
 
-    def api_clean_images(self, apikey: str = "", **kwargs):
+    def api_clean_images(self, apikey: Optional[str] = None):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理图片缓存请求")
             self._clean_generated_images()
@@ -601,7 +601,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】立即清理图片失败: {e}", exc_info=True)
             return self._api_response(1, f"图片缓存清理失败: {e}")
 
-    def api_clean_fonts(self, apikey: str = "", **kwargs):
+    def api_clean_fonts(self, apikey: Optional[str] = None):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理字体缓存请求")
             self._clean_downloaded_fonts()
@@ -612,7 +612,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】立即清理字体失败: {e}", exc_info=True)
             return self._api_response(1, f"字体缓存清理失败: {e}")
 
-    def api_delete_saved_cover(self, file: str = "", apikey: str = "", **kwargs):
+    def api_delete_saved_cover(self, file: Optional[str] = None, apikey: Optional[str] = None):
         try:
             target_file = self._resolve_saved_cover_path(file)
             if not target_file:
@@ -626,7 +626,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】删除封面文件失败: {e}", exc_info=True)
             return self._api_response(1, f"封面文件删除失败: {e}")
 
-    def api_generate_now(self, style: str = "", apikey: str = "", **kwargs):
+    def api_generate_now(self, style: Optional[str] = None, apikey: Optional[str] = None):
         old_style = self._cover_style
         try:
             if not self._enabled:
@@ -657,7 +657,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         finally:
             self._cover_style = old_style
 
-    def api_set_cover_style(self, style: str = "", apikey: str = "", **kwargs):
+    def api_set_cover_style(self, style: Optional[str] = None, apikey: Optional[str] = None):
         try:
             target_style = (style or "").strip()
             allowed_styles = {
@@ -697,7 +697,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         self._update_config()
         logger.info(f"【MediaCoverGenerator】已保存封面风格: {target_style}")
 
-    def api_toggle_style_variant(self, apikey: str = "", **kwargs):
+    def api_toggle_style_variant(self, apikey: Optional[str] = None):
         try:
             variant, index = self._get_cover_style_parts()
             new_variant = "animated" if variant == "static" else "static"
@@ -716,35 +716,35 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】选择风格失败: {e}", exc_info=True)
             return self._api_response(1, f"选择风格失败: {e}")
 
-    def api_select_style_1(self, apikey: str = "", **kwargs):
+    def api_select_style_1(self, apikey: Optional[str] = None):
         return self._api_select_style(1)
 
-    def api_select_style_2(self, apikey: str = "", **kwargs):
+    def api_select_style_2(self, apikey: Optional[str] = None):
         return self._api_select_style(2)
 
-    def api_select_style_3(self, apikey: str = "", **kwargs):
+    def api_select_style_3(self, apikey: Optional[str] = None):
         return self._api_select_style(3)
 
-    def api_select_style_4(self, apikey: str = "", **kwargs):
+    def api_select_style_4(self, apikey: Optional[str] = None):
         return self._api_select_style(4)
 
     def _set_page_tab(self, tab: str):
         self._page_tab = tab if tab in ["generate-tab", "history-tab", "clean-tab"] else "generate-tab"
         logger.info(f"【MediaCoverGenerator】已切换页面Tab: {self._page_tab}")
 
-    def api_set_page_tab_generate(self):
+    def api_set_page_tab_generate(self, apikey: Optional[str] = None):
         self._set_page_tab("generate-tab")
         return self._api_response(0, "已切换到封面生成")
 
-    def api_set_page_tab_history(self):
+    def api_set_page_tab_history(self, apikey: Optional[str] = None):
         self._set_page_tab("history-tab")
         return self._api_response(0, "已切换到历史封面")
 
-    def api_set_page_tab_clean(self):
+    def api_set_page_tab_clean(self, apikey: Optional[str] = None):
         self._set_page_tab("clean-tab")
         return self._api_response(0, "已切换到清理缓存")
 
-    def api_saved_cover_image(self, file: str = "", apikey: str = "", **kwargs):
+    def api_saved_cover_image(self, file: Optional[str] = None, apikey: Optional[str] = None):
         target_file = self._resolve_saved_cover_path(file)
         if not target_file or not target_file.exists() or not target_file.is_file():
             return self._api_response(1, "图片不存在")
