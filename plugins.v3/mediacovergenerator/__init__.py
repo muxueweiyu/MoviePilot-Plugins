@@ -272,8 +272,8 @@ class MediaCoverGenerator(ApiManagerMixin, FontManagerMixin, HistoryManagerMixin
             self._use_primary = config.get("use_primary")
             self._zh_font_custom = config.get("zh_font_custom", "")
             self._en_font_custom = config.get("en_font_custom", "")
-            self._zh_font_preset = config.get("zh_font_preset", "chaohei")
-            self._en_font_preset = config.get("en_font_preset", "EmblemaOne")
+            self._zh_font_preset = config.get("zh_font_preset", "yasong")
+            self._en_font_preset = config.get("en_font_preset", "Melete")
             self._zh_font_offset = config.get("zh_font_offset")
             self._title_spacing = config.get("title_spacing")
             self._en_line_spacing = config.get("en_line_spacing")
@@ -588,6 +588,43 @@ class MediaCoverGenerator(ApiManagerMixin, FontManagerMixin, HistoryManagerMixin
             return True, "已发送停止停止信号，请等待当前操作清理完成"
         return True, "任务已处于停止状态或正在停止中"
 
+    @staticmethod
+    def _title_config_template() -> str:
+        return """国产剧:
+  - 国产剧
+  - DRAMA
+美剧:
+  - 美剧
+  - AMERICAN
+日剧:
+  - 日剧
+  - JAPANESE
+韩剧:
+  - 韩剧
+  - KOREAN
+泰剧:
+  - 泰剧
+  - THAI
+电影:
+  - 电影
+  - MOVIE
+日番:
+  - 日番
+  - ANIME
+国漫:
+  - 国漫
+  - DONGHUA
+综艺:
+  - 综艺
+  - VARIETY
+合集:
+  - 合集
+  - COLLECTION"""
+
+    @classmethod
+    def _title_config_template_onclick(cls) -> str:
+        return f"event => {{ title_config = `{cls._title_config_template()}`; }}"
+
     def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
         """
         拼装插件配置页面
@@ -611,13 +648,40 @@ class MediaCoverGenerator(ApiManagerMixin, FontManagerMixin, HistoryManagerMixin
         # 标题配置
         title_tab = [
             {
-                'component': 'VRow',
+                'component': 'VCard',
+                'props': {
+                    'variant': 'outlined',
+                    'class': 'mb-3 rounded-lg transition-swing',
+                },
                 'content': [
                     {
-                        'component': 'VCol',
+                        'component': 'VCardTitle',
                         'props': {
-                            'cols': 12,
+                            'class': 'text-subtitle-1 font-weight-medium py-3 d-flex align-center justify-space-between',
                         },
+                        'content': [
+                            {
+                                'component': 'span',
+                                'text': '📝 中英标题配置'
+                            },
+                            {
+                                'component': 'VBtn',
+                                'props': {
+                                    'variant': 'tonal',
+                                    'size': 'small',
+                                    'color': 'primary',
+                                    'class': 'text-none',
+                                    'prepend-icon': 'mdi-file-import-outline',
+                                    'onClick': self._title_config_template_onclick(),
+                                },
+                                'text': '导入模板'
+                            }
+                        ]
+                    },
+                    {'component': 'VDivider'},
+                    {
+                        'component': 'VCardText',
+                        'props': {'class': 'pa-0'},
                         'content': [
                             {
                                 'component': 'VAceEditor',
@@ -628,13 +692,19 @@ class MediaCoverGenerator(ApiManagerMixin, FontManagerMixin, HistoryManagerMixin
                                     'style': 'height: 30rem',
                                     'label': '中英标题配置',
                                     'placeholder': '''媒体库名称:
-- 主标题
-- 副标题
-- "#FF5722"  # 可选：背景颜色（必须加引号）'''
-                                 }
-                             }
-                         ]
-                     },
+  - 主标题
+  - 副标题
+  - "#FF5722"  # 可选：背景颜色（必须加引号）
+
+示例：
+电影:
+  - MOVIES
+  - 精选影片
+  - "#B5845C"'''
+                                }
+                            }
+                        ]
+                    }
                 ]
             },
         ]

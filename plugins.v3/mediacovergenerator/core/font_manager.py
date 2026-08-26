@@ -226,7 +226,7 @@ class FontManagerMixin:
         _, _, zh_preset_paths, en_preset_paths = self._get_font_presets()
 
         if not self._zh_font_preset:
-            self._zh_font_preset = "chaohei"
+            self._zh_font_preset = "yasong"
 
         default_font_url = {
             "chaohei": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf",
@@ -242,7 +242,7 @@ class FontManagerMixin:
         default_zh_url = default_font_url.get(self._zh_font_preset, "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf")
 
         if not self._en_font_preset:
-            self._en_font_preset = "EmblemaOne"
+            self._en_font_preset = "Melete"
 
         default_en_url = default_font_url.get(self._en_font_preset, "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2")
         
