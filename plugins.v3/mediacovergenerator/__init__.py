@@ -2265,98 +2265,93 @@ class MediaCoverGenerator(_PluginBase):
         elif not self._servers:
             setup_warnings.append("服务器配置尚未生效，请在设置页保存后重试。")
 
-        # 永远默认首先访问封面生成页，不记忆用户的最后一次Tab选择，以提升开启速度
-        page_tab = "generate-tab"
-        
-        # 仅当明确切换到了历史封面页时，才执行耗时的图片加载逻辑
+        # 历史封面
         cover_rows = []
-        if self._page_tab == "history-tab":
-            page_tab = "history-tab"
-            recent_covers = self.__get_recent_generated_covers(limit=limit)
-            if recent_covers:
-                for item in recent_covers:
-                    delete_api = f"plugin/MediaCoverGenerator/delete_saved_cover?file={quote(item['path'])}"
-                    cover_rows.append(
-                        {
-                            "component": "VCol",
-                            "props": {"cols": 12, "sm": 6, "md": 3},
-                            "content": [
-                                {
-                                    "component": "VCard",
-                                    "props": {
-                                        "variant": "flat",
-                                        "elevation": 2,
-                                        "class": "rounded-lg",
+        recent_covers = self.__get_recent_generated_covers(limit=limit)
+        if recent_covers:
+            for item in recent_covers:
+                delete_api = f"plugin/MediaCoverGenerator/delete_saved_cover?file={quote(item['path'])}"
+                cover_rows.append(
+                    {
+                        "component": "VCol",
+                        "props": {"cols": 12, "sm": 6, "md": 3},
+                        "content": [
+                            {
+                                "component": "VCard",
+                                "props": {
+                                    "variant": "flat",
+                                    "elevation": 2,
+                                    "class": "rounded-lg",
+                                },
+                                "content": [
+                                    {
+                                        "component": "VImg",
+                                        "props": {
+                                            "src": item["src"],
+                                            "aspect-ratio": "16/9",
+                                            "cover": True,
+                                        },
                                     },
-                                    "content": [
-                                        {
-                                            "component": "VImg",
-                                            "props": {
-                                                "src": item["src"],
-                                                "aspect-ratio": "16/9",
-                                                "cover": True,
-                                            },
-                                        },
-                                        {
-                                            "component": "VCardText",
-                                            "props": {"class": "py-2"},
-                                            "content": [
-                                                {
-                                                    "component": "VRow",
-                                                    "props": {"class": "align-center", "noGutters": True},
-                                                    "content": [
-                                                        {
-                                                            "component": "VCol",
-                                                            "props": {"cols": 9},
-                                                            "content": [
-                                                                {
-                                                                    "component": "div",
-                                                                    "props": {
-                                                                        "class": "text-body-2",
-                                                                        "style": "display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2rem; min-height: 2.4rem;"
-                                                                    },
-                                                                    "text": item["name"],
+                                    {
+                                        "component": "VCardText",
+                                        "props": {"class": "py-2"},
+                                        "content": [
+                                            {
+                                                "component": "VRow",
+                                                "props": {"class": "align-center", "noGutters": True},
+                                                "content": [
+                                                    {
+                                                        "component": "VCol",
+                                                        "props": {"cols": 9},
+                                                        "content": [
+                                                            {
+                                                                "component": "div",
+                                                                "props": {
+                                                                    "class": "text-body-2",
+                                                                    "style": "display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2rem; min-height: 2.4rem;"
                                                                 },
-                                                                {
-                                                                    "component": "div",
-                                                                    "props": {"class": "text-caption text-medium-emphasis mt-1"},
-                                                                    "text": item["size"],
+                                                                "text": item["name"],
+                                                            },
+                                                            {
+                                                                "component": "div",
+                                                                "props": {"class": "text-caption text-medium-emphasis mt-1"},
+                                                                "text": item["size"],
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "component": "VCol",
+                                                        "props": {"cols": 3, "class": "text-right"},
+                                                        "content": [
+                                                            {
+                                                                "component": "VBtn",
+                                                                "props": {
+                                                                    "color": "error",
+                                                                    "variant": "text",
+                                                                    "size": "small",
+                                                                    "title": "删除",
+                                                                    "class": "text-none",
                                                                 },
-                                                            ],
-                                                        },
-                                                        {
-                                                            "component": "VCol",
-                                                            "props": {"cols": 3, "class": "text-right"},
-                                                            "content": [
-                                                                {
-                                                                    "component": "VBtn",
-                                                                    "props": {
-                                                                        "color": "error",
-                                                                        "variant": "text",
-                                                                        "size": "small",
-                                                                        "title": "删除",
-                                                                        "class": "text-none",
-                                                                    },
-                                                                    "text": "删除",
-                                                                    "events": {
-                                                                        "click": {
-                                                                            "api": delete_api,
-                                                                            "method": "post",
-                                                                        }
-                                                                    },
-                                                                }
-                                                            ],
-                                                        },
-                                                    ],
-                                                }
-                                            ],
-                                        },
-                                    ],
-                                }
-                            ],
-                        }
-                    )
-        elif self._page_tab == "history-tab":
+                                                                "text": "删除",
+                                                                "events": {
+                                                                    "click": {
+                                                                        "api": delete_api,
+                                                                        "method": "post",
+                                                                    }
+                                                                },
+                                                            }
+                                                        ],
+                                                    },
+                                                ],
+                                            }
+                                        ],
+                                    },
+                                ],
+                            }
+                        ],
+                    }
+                )
+        else:
             cover_rows.append(
                 {
                     "component": "VAlert",
@@ -2365,219 +2360,172 @@ class MediaCoverGenerator(_PluginBase):
                         "variant": "tonal",
                         "density": "compact",
                     },
-                    "text": "未发现最近生成的封面文件。请先执行一次封面生成，或检查“封面另存目录”是否已配置。",
+                    "text": "暂无生成的历史封面文件。点击上方“立即生成当前风格”可自动生成。",
                 }
             )
-            
-        if self._page_tab == "clean-tab":
-            page_tab = "clean-tab"
 
-        return [
+        cards = []
+        
+        # 1. 封面生成与风格配置卡片
+        generate_card_content = []
+        if setup_warnings:
+            generate_card_content.append(
+                {
+                    "component": "VAlert",
+                    "props": {
+                        "type": "warning",
+                        "variant": "tonal",
+                        "density": "compact",
+                        "class": "mb-3",
+                    },
+                    "text": "首次运行请先完成设置",
+                }
+            )
+            generate_card_content.append(
+                {
+                    "component": "div",
+                    "props": {"class": "text-caption text-medium-emphasis mb-2"},
+                    "text": "；".join(setup_warnings),
+                }
+            )
+
+        generate_card_content.append(
             {
-                "component": "VCard",
+                "component": "VRow",
+                "props": {"class": "mb-2"},
                 "content": [
                     {
-                        "component": "VTabs",
-                        "props": {"grow": True, "modelValue": page_tab},
+                        "component": "VCol",
+                        "props": {"cols": 12},
                         "content": [
                             {
-                                "component": "VTab",
-                                "props": {"value": "generate-tab"},
-                                "text": "封面生成",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/set_page_tab_generate", "method": "post"}},
+                                "component": "VBtn",
+                                "props": {
+                                    "variant": "flat",
+                                    "color": "primary",
+                                    "class": "text-none mr-2 mb-2",
+                                    "prepend-icon": "mdi-swap-horizontal",
+                                },
+                                "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
                             },
                             {
-                                "component": "VTab",
-                                "props": {"value": "history-tab"},
-                                "text": "历史封面",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/set_page_tab_history", "method": "post"}},
+                                "component": "VBtn",
+                                "props": {
+                                    "variant": "flat",
+                                    "color": "primary",
+                                    "class": "text-none mb-2 mr-2",
+                                    "prepend-icon": "mdi-play-circle-outline",
+                                },
+                                "text": "立即生成当前风格",
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
                             },
                             {
-                                "component": "VTab",
-                                "props": {"value": "clean-tab"},
-                                "text": "清理缓存",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/set_page_tab_clean", "method": "post"}},
+                                "component": "div",
+                                "props": {"class": "text-caption text-medium-emphasis ml-2 mb-2 d-inline-block"},
+                                "text": "更多参数请点击右下角齿轮设置",
+                            },
+                        ],
+                    }
+                ],
+            }
+        )
+        generate_card_content.append(
+            {
+                "component": "VRow",
+                "content": style_preview_cards,
+            }
+        )
+
+        cards.append(
+            {
+                "component": "VCard",
+                "props": {"variant": "outlined", "class": "mb-4"},
+                "content": [
+                    {
+                        "component": "VCardTitle",
+                        "props": {"class": "text-subtitle-1 font-weight-bold"},
+                        "text": "🎨 封面风格选择与生成",
+                    },
+                    {"component": "VDivider"},
+                    {
+                        "component": "VCardText",
+                        "content": generate_card_content,
+                    },
+                ],
+            }
+        )
+
+        # 2. 历史封面卡片
+        cards.append(
+            {
+                "component": "VCard",
+                "props": {"variant": "outlined", "class": "mb-4"},
+                "content": [
+                    {
+                        "component": "VCardTitle",
+                        "props": {"class": "text-subtitle-1 font-weight-bold"},
+                        "text": f"🖼️ 历史封面预览（最多显示 {limit} 条）",
+                    },
+                    {"component": "VDivider"},
+                    {
+                        "component": "VCardText",
+                        "content": [{"component": "VRow", "content": cover_rows}],
+                    },
+                ],
+            }
+        )
+
+        # 3. 维护与清理工具卡片
+        cards.append(
+            {
+                "component": "VCard",
+                "props": {"variant": "outlined", "class": "mb-4"},
+                "content": [
+                    {
+                        "component": "VCardTitle",
+                        "props": {"class": "text-subtitle-1 font-weight-bold"},
+                        "text": "🧹 缓存维护工具",
+                    },
+                    {"component": "VDivider"},
+                    {
+                        "component": "VCardText",
+                        "props": {"class": "pa-4 d-flex align-center flex-wrap"},
+                        "content": [
+                            {
+                                "component": "VBtn",
+                                "props": {
+                                    "color": "error",
+                                    "variant": "flat",
+                                    "prepend-icon": "mdi-image-remove",
+                                    "class": "mr-3 mb-2 text-none",
+                                },
+                                "text": "立即清理图片缓存",
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_images", "method": "post"}},
+                            },
+                            {
+                                "component": "VBtn",
+                                "props": {
+                                    "color": "error",
+                                    "variant": "flat",
+                                    "prepend-icon": "mdi-format-font",
+                                    "class": "mr-3 mb-2 text-none",
+                                },
+                                "text": "立即清理字体缓存",
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_fonts", "method": "post"}},
+                            },
+                            {
+                                "component": "div",
+                                "props": {"class": "text-caption text-medium-emphasis mb-2"},
+                                "text": "点击后立即清理本地临时缓存，无需重启或重新保存设置。",
                             },
                         ],
                     },
-                    {"component": "VDivider"},
                 ],
-            },
-        ] + (
-            [
-                {
-                    "component": "VCard",
-                    "props": {"variant": "outlined", "class": "mt-3"},
-                    "content": [
-                                    {
-                                        "component": "VCardText",
-                                        "content": [
-                                            {
-                                                "component": "VAlert",
-                                                "props": {
-                                                    "type": "warning",
-                                                    "variant": "tonal",
-                                                    "density": "compact",
-                                                    "class": "mb-3",
-                                                },
-                                                "text": "首次运行请先完成设置",
-                                            },
-                                            {
-                                                "component": "div",
-                                                "props": {"class": "text-caption text-medium-emphasis mb-2"},
-                                                "text": "；".join(setup_warnings),
-                                            },
-                                            {
-                                                "component": "VRow",
-                                                "content": [
-                                                    {
-                                                        "component": "VCol",
-                                            "props": {"cols": 12, "md": 9},
-                                            "content": [
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mr-2 mb-2",
-                                                                    "prepend-icon": "mdi-swap-horizontal",
-                                                                },
-                                                    "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
-                                                },
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mb-2",
-                                                                    "prepend-icon": "mdi-play-circle-outline",
-                                                                },
-                                                    "text": "立即生成当前风格",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
-                                                },
-                                                {
-                                                    "component": "div",
-                                                    "props": {"class": "text-caption text-medium-emphasis ml-2 mb-2 d-inline-block"},
-                                                    "text": "更多参数请点击右下角齿轮设置",
-                                                },
-                                            ],
-                                        }
-                                    ],
-                                },
-                                {
-                                    "component": "VRow",
-                                    "content": style_preview_cards,
-                                },
-                            ],
-                        }
-                    ],
-                }
-            ] if page_tab == "generate-tab" and setup_warnings else
-            [
-                {
-                    "component": "VCard",
-                    "props": {"variant": "outlined", "class": "mt-3"},
-                    "content": [
-                                    {
-                                        "component": "VCardText",
-                                        "content": [
-                                            {
-                                                "component": "VRow",
-                                                "content": [
-                                                    {
-                                                        "component": "VCol",
-                                            "props": {"cols": 12, "md": 9},
-                                            "content": [
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mr-2 mb-2",
-                                                                    "prepend-icon": "mdi-swap-horizontal",
-                                                                },
-                                                    "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
-                                                },
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mb-2",
-                                                                    "prepend-icon": "mdi-play-circle-outline",
-                                                                },
-                                                    "text": "立即生成当前风格",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
-                                                }
-                                            ],
-                                        }
-                                    ],
-                                },
-                                {
-                                    "component": "VRow",
-                                    "content": style_preview_cards,
-                                },
-                            ],
-                        }
-                    ],
-                }
-            ] if page_tab == "generate-tab" else
-            [
-                {
-                    "component": "VCard",
-                    "props": {"variant": "outlined", "class": "mt-3"},
-                    "content": [
-                        {"component": "VCardTitle", "text": f"最近生成的封面（最多 {limit} 条）"},
-                        {"component": "VCardText", "content": [{"component": "VRow", "content": cover_rows}]},
-                    ],
-                }
-            ] if page_tab == "history-tab" else
-            [
-                {
-                    "component": "VCard",
-                    "props": {"variant": "outlined", "class": "mt-3"},
-                    "content": [
-                        {
-                            "component": "VCardText",
-                            "props": {"class": "pa-6 d-flex flex-column align-center"},
-                            "content": [
-                                            {
-                                                "component": "VBtn",
-                                                "props": {
-                                                    "color": "error",
-                                                    "variant": "flat",
-                                                    "size": "large",
-                                                    "prepend-icon": "mdi-image-remove",
-                                                    "class": "mb-3 text-none",
-                                                },
-                                    "text": "立即清理图片缓存",
-                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_images", "method": "post"}},
-                                },
-                                            {
-                                                "component": "VBtn",
-                                                "props": {
-                                                    "color": "error",
-                                                    "variant": "flat",
-                                                    "size": "large",
-                                                    "prepend-icon": "mdi-format-font",
-                                                    "class": "mb-3 text-none",
-                                                },
-                                    "text": "立即清理字体缓存",
-                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_fonts", "method": "post"}},
-                                },
-                                {
-                                    "component": "div",
-                                    "props": {"class": "text-caption text-medium-emphasis"},
-                                    "text": "点击后立即执行，无需保存配置。",
-                                },
-                            ],
-                        }
-                    ],
-                }
-            ]
+            }
         )
+
+        return cards
     def __build_page_style_cards(self, style_variant: str, selected_index: int) -> List[Dict[str, Any]]:
         styles = [
             {"name": "风格1", "index": 1, "src": self.__style_preview_src(1)},
