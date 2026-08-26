@@ -205,8 +205,17 @@ class MediaCoverGenerator(_PluginBase):
         super().__init__()
 
     def init_plugin(self, config: dict = None):
-        self.mschain = MediaServerChain()
-        self.mediaserver_helper = MediaServerHelper()   
+        try:
+            self.mschain = MediaServerChain() if MediaServerChain else None
+        except Exception as e:
+            logger.warning(f"MediaServerChain 初始化失败: {e}")
+            self.mschain = None
+
+        try:
+            self.mediaserver_helper = MediaServerHelper() if MediaServerHelper else None
+        except Exception as e:
+            logger.warning(f"MediaServerHelper 初始化失败: {e}")
+            self.mediaserver_helper = None
         data_path = self.get_data_path()
         (data_path / 'fonts').mkdir(parents=True, exist_ok=True)
         (data_path / 'input').mkdir(parents=True, exist_ok=True)
@@ -341,18 +350,26 @@ class MediaCoverGenerator(_PluginBase):
             logger.warning(f"分辨率配置初始化失败，使用默认配置: {e}")
             self._resolution_config = ResolutionConfig("480p")
 
-        if self._selected_servers:
-            self._servers = self.mediaserver_helper.get_services(
-                name_filters=self._selected_servers
-            )
-            self._all_libraries = []
-            for server, service in self._servers.items():
-                if not service.instance.is_inactive():
-                    self._all_libraries.extend(self.__get_all_libraries(server, service))
-                else:
-                    logger.info(f"媒体服务器 {server} 未连接")
+        if self._selected_servers and self.mediaserver_helper:
+            try:
+                self._servers = self.mediaserver_helper.get_services(
+                    name_filters=self._selected_servers
+                )
+                self._all_libraries = []
+                for server, service in (self._servers or {}).items():
+                    if not service.instance.is_inactive():
+                        self._all_libraries.extend(self.__get_all_libraries(server, service))
+                    else:
+                        logger.info(f"媒体服务器 {server} 未连接")
+            except Exception as e:
+                logger.warning(f"获取媒体服务器服务失败: {e}")
+                self._servers = {}
+                self._all_libraries = []
         else:
-            logger.info("未选择媒体服务器")
+            if not self._selected_servers:
+                logger.info("未选择媒体服务器")
+            elif not self.mediaserver_helper:
+                logger.warning("MediaServerHelper 不可用，无法获取媒体服务器")
         
         # 停止现有任务
         self.stop_service()
@@ -987,6 +1004,18 @@ class MediaCoverGenerator(_PluginBase):
         self._page_tab = "generate-tab"
         
         zh_font_items, en_font_items, _, _ = self.__get_font_presets()
+
+        server_items = []
+        if self.mediaserver_helper:
+            try:
+                configs = self.mediaserver_helper.get_configs() or {}
+                server_items = [
+                    {"title": config.name, "value": config.name}
+                    for config in configs.values()
+                    if getattr(config, "type", None) in ("emby", "jellyfin")
+                ]
+            except Exception as e:
+                logger.warning(f"获取媒体服务器列表失败: {e}")
         # 标题配置
         title_tab = [
             {
@@ -2052,10 +2081,7 @@ class MediaCoverGenerator(_PluginBase):
                                                             'clearable': True,
                                                             'model': 'selected_servers',
                                                             'label': '媒体服务器',
-                                                            'items': [{"title": config.name, "value": config.name}
-                                                                    for config in self.mediaserver_helper.get_configs().values()
-                                                                    if config.type in ("emby", "jellyfin")
-                                                                    ]
+                                                            'items': server_items
                                                         }
                                                     }
                                                 ]
@@ -2853,6 +2879,10 @@ class MediaCoverGenerator(_PluginBase):
             time.sleep(int(self._delay))
             
         # Query the item in media server
+        if not self.mschain:
+            logger.warning("MediaServerChain 不可用，跳过更新封面")
+            return
+
         existsinfo = self.mschain.media_exists(mediainfo=mediainfo)
         if not existsinfo or not existsinfo.itemid:
             self.mschain.sync()
@@ -2873,9 +2903,10 @@ class MediaCoverGenerator(_PluginBase):
         library = {}
         item_id = existsinfo.itemid
         server = existsinfo.server
-        service = self._servers.get(server)
+        service = self._servers.get(server) if self._servers else None
+        libraries = []
         if service:
-            libraries = self.__get_server_libraries(service)
+            libraries = self.__get_server_libraries(service) or []
         if libraries and not library_id:
             library = next(
                 (library
@@ -2884,7 +2915,7 @@ class MediaCoverGenerator(_PluginBase):
                 None
             )
         
-        if not library:
+        if not library or not service:
             logger.warning(f"找不到 {mediainfo.title_year} 所在媒体库")
             return
         if service.type == 'emby':
