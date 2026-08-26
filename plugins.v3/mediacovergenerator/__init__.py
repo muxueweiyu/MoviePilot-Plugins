@@ -253,10 +253,10 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                     self._cover_style = 'static_2'
                 elif self._cover_style == 'multi_1':
                     self._cover_style = 'static_3'
-            default_base, default_variant = self.__resolve_cover_style_ui(self._cover_style)
+            default_base, default_variant = self._resolve_cover_style_ui(self._cover_style)
             self._cover_style_base = config.get("cover_style_base", default_base)
             self._cover_style_variant = config.get("cover_style_variant", default_variant)
-            self._cover_style = self.__compose_cover_style(self._cover_style_base, self._cover_style_variant)
+            self._cover_style = self._compose_cover_style(self._cover_style_base, self._cover_style_variant)
             self._multi_1_blur = config.get("multi_1_blur", True)
             self._zh_font_size = config.get("zh_font_size", 170)
             self._en_font_size = config.get("en_font_size", 75)
@@ -311,7 +311,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             self._clean_images = config.get("clean_images", False)
             self._clean_fonts = config.get("clean_fonts", False)
             self._save_recent_covers = config.get("save_recent_covers", True)
-            self._covers_history_limit_per_library = self.__clamp_value(
+            self._covers_history_limit_per_library = self._clamp_value(
                 config.get("covers_history_limit_per_library", 10),
                 1,
                 100,
@@ -319,7 +319,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                 "covers_history_limit_per_library[init_plugin]",
                 int,
             )
-            self._covers_page_history_limit = self.__clamp_value(
+            self._covers_page_history_limit = self._clamp_value(
                 config.get("covers_page_history_limit", 50),
                 1,
                 500,
@@ -333,7 +333,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                 self._resolution = "480p"
             self._animation_resolution = "320x180"
 
-        self._animated_2_image_count = self.__clamp_value(
+        self._animated_2_image_count = self._clamp_value(
             self._animated_2_image_count,
             3,
             9,
@@ -363,7 +363,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                 self._all_libraries = []
                 for server, service in (self._servers or {}).items():
                     if not service.instance.is_inactive():
-                        self._all_libraries.extend(self.__get_all_libraries(server, service))
+                        self._all_libraries.extend(self._get_all_libraries(server, service))
                     else:
                         logger.info(f"媒体服务器 {server} 未连接")
             except Exception as e:
@@ -381,19 +381,19 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
 
         cleanup_triggered = False
         if self._clean_images:
-            self.__clean_generated_images()
+            self._clean_generated_images()
             self._clean_images = False
             cleanup_triggered = True
         if self._clean_fonts:
-            self.__clean_downloaded_fonts()
+            self._clean_downloaded_fonts()
             self._clean_fonts = False
             cleanup_triggered = True
         if cleanup_triggered:
-            self.__update_config()
+            self._update_config()
 
         if self._update_now:
             self._scheduler = BackgroundScheduler(timezone=settings.TZ)
-            self._scheduler.add_job(func=self.__update_all_libraries, trigger='date',
+            self._scheduler.add_job(func=self._update_all_libraries, trigger='date',
                                     run_date=datetime.datetime.now(
                                         tz=pytz.timezone(settings.TZ)) + datetime.timedelta(seconds=3)
                                     )
@@ -401,13 +401,13 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             # 关闭一次性开关
             self._update_now = False
             # 保存配置
-            self.__update_config()
+            self._update_config()
             # 启动服务
             if self._scheduler.get_jobs():
                 self._scheduler.print_jobs()
                 self._scheduler.start()
 
-    def __clamp_value(self, value, minimum, maximum, default_value, name, cast_type):
+    def _clamp_value(self, value, minimum, maximum, default_value, name, cast_type):
         try:
             parsed = cast_type(value)
         except (ValueError, TypeError):
@@ -421,8 +421,8 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
 
         return parsed
 
-    def __get_animated_2_required_items(self) -> int:
-        self._animated_2_image_count = self.__clamp_value(
+    def _get_animated_2_required_items(self) -> int:
+        self._animated_2_image_count = self._clamp_value(
             self._animated_2_image_count,
             3,
             9,
@@ -432,13 +432,13 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         )
         return int(self._animated_2_image_count)
 
-    def __compose_cover_style(self, base_style: str, variant: str) -> str:
+    def _compose_cover_style(self, base_style: str, variant: str) -> str:
         base = base_style if base_style in ["static_1", "static_2", "static_3", "static_4"] else "static_1"
         mode = variant if variant in ["static", "animated"] else "static"
         suffix = base.split("_")[-1]
         return base if mode == "static" else f"animated_{suffix}"
 
-    def __resolve_cover_style_ui(self, cover_style: str) -> Tuple[str, str]:
+    def _resolve_cover_style_ui(self, cover_style: str) -> Tuple[str, str]:
         if cover_style in ["animated_1", "animated_2", "animated_3", "animated_4"]:
             suffix = cover_style.split("_")[-1]
             if suffix == "4":
@@ -448,22 +448,22 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             return cover_style, "static"
         return "static_1", "static"
 
-    def __is_single_image_style(self) -> bool:
+    def _is_single_image_style(self) -> bool:
         return self._cover_style in ["static_1", "static_2", "static_4"]
 
-    def __get_required_items(self) -> int:
+    def _get_required_items(self) -> int:
         if self._cover_style in ["static_3", "animated_3"]:
             return 9
         if self._cover_style in ["animated_1", "animated_2", "animated_4"]:
-            return self.__get_animated_2_required_items()
+            return self._get_animated_2_required_items()
         return 1
 
-    def __update_config(self):
+    def _update_config(self):
         """
         更新配置
         """
-        self._cover_style = self.__compose_cover_style(self._cover_style_base, self._cover_style_variant)
-        self._animated_2_image_count = self.__clamp_value(
+        self._cover_style = self._compose_cover_style(self._cover_style_base, self._cover_style_variant)
+        self._animated_2_image_count = self._clamp_value(
             self._animated_2_image_count,
             3,
             9,
@@ -593,9 +593,9 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
     def api_clean_images(self):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理图片缓存请求")
-            self.__clean_generated_images()
+            self._clean_generated_images()
             self._clean_images = False
-            self.__update_config()
+            self._update_config()
             return self._api_response(0, "图片缓存清理完成")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】立即清理图片失败: {e}", exc_info=True)
@@ -604,9 +604,9 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
     def api_clean_fonts(self):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理字体缓存请求")
-            self.__clean_downloaded_fonts()
+            self._clean_downloaded_fonts()
             self._clean_fonts = False
-            self.__update_config()
+            self._update_config()
             return self._api_response(0, "字体缓存清理完成")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】立即清理字体失败: {e}", exc_info=True)
@@ -614,7 +614,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
 
     def api_delete_saved_cover(self, file: str = ""):
         try:
-            target_file = self.__resolve_saved_cover_path(file)
+            target_file = self._resolve_saved_cover_path(file)
             if not target_file:
                 return self._api_response(1, "无效文件路径")
             if not target_file.exists() or not target_file.is_file():
@@ -649,7 +649,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                     return self._api_response(1, f"不支持的风格: {target_style}")
                 self._cover_style = target_style
             logger.info(f"【MediaCoverGenerator】收到立即生成请求，风格: {self._cover_style}")
-            tips = self.__update_all_libraries()
+            tips = self._update_all_libraries()
             return self._api_response(0, tips or "封面生成任务已完成")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】立即生成失败: {e}", exc_info=True)
@@ -667,17 +667,17 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             if target_style not in allowed_styles:
                 return self._api_response(1, f"不支持的风格: {target_style}")
             self._cover_style = target_style
-            base, variant = self.__resolve_cover_style_ui(target_style)
+            base, variant = self._resolve_cover_style_ui(target_style)
             self._cover_style_base = base
             self._cover_style_variant = variant
-            self.__update_config()
+            self._update_config()
             logger.info(f"【MediaCoverGenerator】已保存封面风格: {target_style}")
             return self._api_response(0, f"已保存风格: {target_style}")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】保存封面风格失败: {e}", exc_info=True)
             return self._api_response(1, f"保存风格失败: {e}")
 
-    def __get_cover_style_parts(self) -> Tuple[str, int]:
+    def _get_cover_style_parts(self) -> Tuple[str, int]:
         style = (self._cover_style or "static_1").strip()
         variant = "animated" if style.startswith("animated_") else "static"
         try:
@@ -687,65 +687,65 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         index = max(1, min(4, index))
         return variant, index
 
-    def __set_cover_style_parts(self, variant: str, index: int):
+    def _set_cover_style_parts(self, variant: str, index: int):
         safe_variant = "animated" if variant == "animated" else "static"
         safe_index = max(1, min(4, int(index)))
         target_style = f"{safe_variant}_{safe_index}"
         self._cover_style = target_style
         self._cover_style_base = f"static_{safe_index}"
         self._cover_style_variant = safe_variant
-        self.__update_config()
+        self._update_config()
         logger.info(f"【MediaCoverGenerator】已保存封面风格: {target_style}")
 
     def api_toggle_style_variant(self):
         try:
-            variant, index = self.__get_cover_style_parts()
+            variant, index = self._get_cover_style_parts()
             new_variant = "animated" if variant == "static" else "static"
-            self.__set_cover_style_parts(new_variant, index)
+            self._set_cover_style_parts(new_variant, index)
             return self._api_response(0, f"已切换为{new_variant}风格{index}")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】切换静态/动态失败: {e}", exc_info=True)
             return self._api_response(1, f"切换失败: {e}")
 
-    def __api_select_style(self, index: int):
+    def _api_select_style(self, index: int):
         try:
-            variant, _ = self.__get_cover_style_parts()
-            self.__set_cover_style_parts(variant, index)
+            variant, _ = self._get_cover_style_parts()
+            self._set_cover_style_parts(variant, index)
             return self._api_response(0, f"已选择{variant}风格{index}")
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】选择风格失败: {e}", exc_info=True)
             return self._api_response(1, f"选择风格失败: {e}")
 
     def api_select_style_1(self):
-        return self.__api_select_style(1)
+        return self._api_select_style(1)
 
     def api_select_style_2(self):
-        return self.__api_select_style(2)
+        return self._api_select_style(2)
 
     def api_select_style_3(self):
-        return self.__api_select_style(3)
+        return self._api_select_style(3)
 
     def api_select_style_4(self):
-        return self.__api_select_style(4)
+        return self._api_select_style(4)
 
-    def __set_page_tab(self, tab: str):
+    def _set_page_tab(self, tab: str):
         self._page_tab = tab if tab in ["generate-tab", "history-tab", "clean-tab"] else "generate-tab"
         logger.info(f"【MediaCoverGenerator】已切换页面Tab: {self._page_tab}")
 
     def api_set_page_tab_generate(self):
-        self.__set_page_tab("generate-tab")
+        self._set_page_tab("generate-tab")
         return self._api_response(0, "已切换到封面生成")
 
     def api_set_page_tab_history(self):
-        self.__set_page_tab("history-tab")
+        self._set_page_tab("history-tab")
         return self._api_response(0, "已切换到历史封面")
 
     def api_set_page_tab_clean(self):
-        self.__set_page_tab("clean-tab")
+        self._set_page_tab("clean-tab")
         return self._api_response(0, "已切换到清理缓存")
 
     def api_saved_cover_image(self, file: str = ""):
-        target_file = self.__resolve_saved_cover_path(file)
+        target_file = self._resolve_saved_cover_path(file)
         if not target_file or not target_file.exists() or not target_file.is_file():
             return self._api_response(1, "图片不存在")
         mime_type, _ = mimetypes.guess_type(str(target_file))
@@ -772,7 +772,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                 "id": "MediaCoverGenerator",
                 "name": "媒体库封面更新服务",
                 "trigger": CronTrigger.from_crontab(self._cron),
-                "func": self.__update_all_libraries,
+                "func": self._update_all_libraries,
                 "kwargs": {}
             })
         
@@ -803,7 +803,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         # 每次用户打开插件设置页面时，强制重置回封面生成页签，满足不记忆页签的需求
         self._page_tab = "generate-tab"
         
-        zh_font_items, en_font_items, _, _ = self.__get_font_presets()
+        zh_font_items, en_font_items, _, _ = self._get_font_presets()
 
         server_items = []
         if self.mediaserver_helper:
@@ -1238,19 +1238,19 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         styles = [
             {
                 "value": "static_1",
-                "src": self.__style_preview_src(1)
+                "src": self._style_preview_src(1)
             },
             {
                 "value": "static_2",
-                "src": self.__style_preview_src(2)
+                "src": self._style_preview_src(2)
             },
             {
                 "value": "static_3",
-                "src": self.__style_preview_src(3)
+                "src": self._style_preview_src(3)
             },
             {
                 "value": "static_4",
-                "src": self.__style_preview_src(4)
+                "src": self._style_preview_src(4)
             }
         ]
 
@@ -2115,7 +2115,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         }
 
     def get_page(self) -> List[dict]:
-        limit = self.__clamp_value(
+        limit = self._clamp_value(
             self._covers_page_history_limit,
             1,
             500,
@@ -2123,8 +2123,8 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             "covers_page_history_limit[get_page]",
             int,
         )
-        style_variant, style_index = self.__get_cover_style_parts()
-        style_preview_cards = self.__build_page_style_cards(style_variant=style_variant, selected_index=style_index)
+        style_variant, style_index = self._get_cover_style_parts()
+        style_preview_cards = self._build_page_style_cards(style_variant=style_variant, selected_index=style_index)
         setup_warnings: List[str] = []
         if not self._enabled:
             setup_warnings.append("插件未启用，请先在设置页启用插件并保存。")
@@ -2135,7 +2135,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
 
         # 历史封面
         cover_rows = []
-        recent_covers = self.__get_recent_generated_covers(limit=limit)
+        recent_covers = self._get_recent_generated_covers(limit=limit)
         if recent_covers:
             for item in recent_covers:
                 delete_api = f"plugin/MediaCoverGenerator/delete_saved_cover?file={quote(item['path'])}"
@@ -2394,12 +2394,12 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         )
 
         return cards
-    def __build_page_style_cards(self, style_variant: str, selected_index: int) -> List[Dict[str, Any]]:
+    def _build_page_style_cards(self, style_variant: str, selected_index: int) -> List[Dict[str, Any]]:
         styles = [
-            {"name": "风格1", "index": 1, "src": self.__style_preview_src(1)},
-            {"name": "风格2", "index": 2, "src": self.__style_preview_src(2)},
-            {"name": "风格3", "index": 3, "src": self.__style_preview_src(3)},
-            {"name": "风格4", "index": 4, "src": self.__style_preview_src(4)},
+            {"name": "风格1", "index": 1, "src": self._style_preview_src(1)},
+            {"name": "风格2", "index": 2, "src": self._style_preview_src(2)},
+            {"name": "风格3", "index": 3, "src": self._style_preview_src(3)},
+            {"name": "风格4", "index": 4, "src": self._style_preview_src(4)},
         ]
         cards: List[Dict[str, Any]] = []
         for style in styles:
@@ -2444,7 +2444,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         return cards
 
     @staticmethod
-    def __style_preview_src(index: int) -> str:
+    def _style_preview_src(index: int) -> str:
         safe_index = max(1, min(4, int(index)))
         return f"https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/images/style_{safe_index}.jpeg"
 
@@ -2467,7 +2467,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                 title="开始更新媒体库封面 ...",
                 userid=event.event_data.get("user"),
             )
-        tips = self.__update_all_libraries()
+        tips = self._update_all_libraries()
         if event:
             self.post_message(
                 channel=event.event_data.get("channel"),
@@ -2536,7 +2536,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         service = self._servers.get(server) if self._servers else None
         libraries = []
         if service:
-            libraries = self.__get_server_libraries(service) or []
+            libraries = self._get_server_libraries(service) or []
         if libraries and not library_id:
             library = next(
                 (library
@@ -2574,7 +2574,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         
         # 安全地获取字体和翻译
         try:
-            self.__get_fonts()
+            self._get_fonts()
         except Exception as e:
             logger.error(f"初始化字体或翻译时出错: {e}")
             # 继续执行，但可能会影响封面生成质量
@@ -2586,7 +2586,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         # logger.info(f"最新数据： {new_history}")
         self._monitor_sort = 'DateCreated'
         self._current_updating_items.add(update_key)
-        if self.__update_library(service, library):
+        if self._update_library(service, library):
             self._monitor_sort = ''
             self._current_updating_items.remove(update_key)
             logger.info(f"媒体库 {server}：{library['Name']} 封面更新成功")

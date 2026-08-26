@@ -114,7 +114,7 @@ except ImportError:
 
 
 class GeneratorMixin:
-    def __update_all_libraries(self):
+    def _update_all_libraries(self):
         """
         更新所有媒体库封面
         """
@@ -125,7 +125,7 @@ class GeneratorMixin:
             return
         logger.info("开始检查字体 ...")
         try:
-            self.__get_fonts()
+            self._get_fonts()
         except Exception as e:
             logger.error(f"初始化过程中出错: {e}")
             logger.warning("将尝试继续执行，但可能影响封面生成质量")
@@ -147,7 +147,7 @@ class GeneratorMixin:
             }.get(self._cover_style, "静态 1")
             logger.info(f"当前风格 {cover_style}")
             # 获取媒体库列表
-            libraries = self.__get_server_libraries(service)
+            libraries = self._get_server_libraries(service)
             if not libraries:
                 logger.warning(f"服务器 {server} 的媒体库列表获取失败")
                 continue
@@ -165,7 +165,7 @@ class GeneratorMixin:
                 if self._include_libraries and f"{server}-{library_id}" not in self._include_libraries:
                     logger.info(f"{server}：{library['Name']} 不在列表中，跳过更新封面")
                     continue
-                if self.__update_library(service, library):
+                if self._update_library(service, library):
                     logger.info(f"媒体库 {server}：{library['Name']} 封面更新成功")
                     success_count += 1
                 else:
@@ -175,13 +175,13 @@ class GeneratorMixin:
         logger.info(tips)
         return tips
 
-    def __update_library(self, service, library):
+    def _update_library(self, service, library):
         library_name = library['Name']
         logger.info(f"媒体库 {service.name}：{library_name} 开始准备更新封面")
         # 自定义图像路径
-        image_path = self.__check_custom_image(library_name)
+        image_path = self._check_custom_image(library_name)
         # 从配置获取标题和背景颜色
-        title_result = self.__get_title_from_config(library_name)
+        title_result = self._get_title_from_config(library_name)
         if len(title_result) == 3:
             title = (title_result[0], title_result[1])
             config_bg_color = title_result[2]
@@ -190,19 +190,19 @@ class GeneratorMixin:
             config_bg_color = None
         if image_path:
             logger.info(f"媒体库 {service.name}：{library_name} 从自定义路径获取封面")
-            image_data = self.__generate_image_from_path(service.name, library_name, title, image_path[0], config_bg_color)
+            image_data = self._generate_image_from_path(service.name, library_name, title, image_path[0], config_bg_color)
         else:
-            image_data = self.__generate_from_server(service, library, title)
+            image_data = self._generate_from_server(service, library, title)
 
         if image_data:
-            return self.__set_library_image(service, library, image_data)
+            return self._set_library_image(service, library, image_data)
 
-    def __check_custom_image(self, library_name):
+    def _check_custom_image(self, library_name):
         if not self._covers_input:
             return None
 
         # 使用安全的文件名
-        safe_library_name = self.__sanitize_filename(library_name)
+        safe_library_name = self._sanitize_filename(library_name)
         library_dir = os.path.join(self._covers_input, safe_library_name)
         if not os.path.isdir(library_dir):
             return None
@@ -216,7 +216,7 @@ class GeneratorMixin:
         return images if images else None  # 或改为 return images if images else False
 
     @memory_efficient_operation
-    def __generate_image_from_path(self, server, library_name, title, image_path=None, config_bg_color=None):
+    def _generate_image_from_path(self, server, library_name, title, image_path=None, config_bg_color=None):
         logger.info(f"媒体库 {server}：{library_name} 正在生成封面图 ...")
 
         # 执行健康检查
@@ -326,7 +326,7 @@ class GeneratorMixin:
                                                 bg_color_config=bg_color_config)
         elif self._cover_style == 'static_3':
             # 使用安全的文件名
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
             if image_path:
                 library_dir = Path(self._covers_input) / safe_library_name
             else:
@@ -350,7 +350,7 @@ class GeneratorMixin:
             logger.info(f"强制动图生成分辨率为: {anim_res}")
             
             # 动态封面逻辑，类似于 multi_1
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
             if image_path:
                 library_dir = Path(self._covers_input) / safe_library_name
             else:
@@ -379,10 +379,10 @@ class GeneratorMixin:
             anim_res = '320x180'
             logger.info(f"强制动图生成分辨率为: {anim_res}")
 
-            animated_2_image_count = self.__get_animated_2_required_items()
+            animated_2_image_count = self._get_animated_2_required_items()
 
             # 动态封面逻辑，类似于 multi_1
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
             if image_path:
                 library_dir = Path(self._covers_input) / safe_library_name
             else:
@@ -412,7 +412,7 @@ class GeneratorMixin:
             anim_res = '320x180'
             logger.info(f"强制动图生成分辨率为: {anim_res}")
 
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
             if image_path:
                 library_dir = Path(self._covers_input) / safe_library_name
             else:
@@ -434,15 +434,15 @@ class GeneratorMixin:
                                                     animation_format=self._animation_format,
                                                     animation_resolution=anim_res,
                                                     animation_reduce_colors=self._animation_reduce_colors,
-                                                    image_count=self.__get_animated_2_required_items(),
+                                                    image_count=self._get_animated_2_required_items(),
                                                     stop_event=self._event)
         elif self._cover_style == 'animated_4':
             anim_res = '320x180'
             logger.info(f"强制动图生成分辨率为: {anim_res}")
 
-            animated_2_image_count = self.__get_animated_2_required_items()
+            animated_2_image_count = self._get_animated_2_required_items()
 
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
             if image_path:
                 library_dir = Path(self._covers_input) / safe_library_name
             else:
@@ -468,10 +468,10 @@ class GeneratorMixin:
                                                     stop_event=self._event)
         return image_data
 
-    def __generate_from_server(self, service, library, title):
+    def _generate_from_server(self, service, library, title):
 
         logger.info(f"媒体库 {service.name}：{library['Name']} 开始筛选媒体项")
-        required_items = self.__get_required_items()
+        required_items = self._get_required_items()
         
         # 获取项目集合
         items = []
@@ -488,14 +488,14 @@ class GeneratorMixin:
         
         # 处理合集类型的特殊情况
         if library_type == "boxsets":
-            return self.__handle_boxset_library(service, library, title)
+            return self._handle_boxset_library(service, library, title)
         elif library_type == "playlists":
-            return self.__handle_playlist_library(service, library, title)
+            return self._handle_playlist_library(service, library, title)
         elif library_type == "music":
             include_types = 'MusicAlbum,Audio'
         else:
             # 基础类型映射
-            if self.__is_single_image_style():
+            if self._is_single_image_style():
                 include_types = {
                     "PremiereDate": "Movie,Series",
                     "DateCreated": "Movie,Episode",
@@ -515,7 +515,7 @@ class GeneratorMixin:
                 logger.info("检测到停止信号，中断媒体项获取 ...")
                 return False
                 
-            batch_items = self.__get_items_batch(service, parent_id,
+            batch_items = self._get_items_batch(service, parent_id,
                                               offset=offset, limit=batch_size,
                                               include_types=include_types)
             
@@ -523,7 +523,7 @@ class GeneratorMixin:
                 break  # 没有更多项目可获取
                 
             # 筛选有效项目（有所需图片的项目）
-            valid_items = self.__filter_valid_items(batch_items)
+            valid_items = self._filter_valid_items(batch_items)
             items.extend(valid_items)
             
             # 如果已经有足够的有效项目，则停止获取
@@ -535,15 +535,15 @@ class GeneratorMixin:
         # 使用获取到的有效项目更新封面
         if len(items) > 0:
             logger.info(f"媒体库 {service.name}：{library['Name']} 找到 {len(items)} 个有效项目")
-            if self.__is_single_image_style():
-                return self.__update_single_image(service, library, title, items[0])
+            if self._is_single_image_style():
+                return self._update_single_image(service, library, title, items[0])
             else:
-                return self.__update_grid_image(service, library, title, items[:required_items])
+                return self._update_grid_image(service, library, title, items[:required_items])
         else:
             logger.warning(f"媒体库 {service.name}：{library['Name']} 无法找到有效的图片项目 (筛选类型: {include_types})")
             return False
 
-    def __handle_boxset_library(self, service, library, title):
+    def _handle_boxset_library(self, service, library, title):
 
         include_types = 'BoxSet,Movie'
         if service.type == 'emby':
@@ -551,16 +551,16 @@ class GeneratorMixin:
         else:
             library_id = library.get("ItemId")
         parent_id = library_id
-        boxsets = self.__get_items_batch(service, parent_id,
+        boxsets = self._get_items_batch(service, parent_id,
                                       include_types=include_types)
         
-        required_items = self.__get_required_items()
+        required_items = self._get_required_items()
         valid_items = []
         
         # 首先检查BoxSet本身是否有合适的图片
         self._seen_keys = set()
 
-        valid_boxsets = self.__filter_valid_items(boxsets)
+        valid_boxsets = self._filter_valid_items(boxsets)
         valid_items.extend(valid_boxsets)
         
         # 如果BoxSet本身没有足够的图片，则获取其中的电影
@@ -570,11 +570,11 @@ class GeneratorMixin:
                     break
                     
                 # 获取此BoxSet中的电影
-                movies = self.__get_items_batch(service,
+                movies = self._get_items_batch(service,
                                              parent_id=boxset['Id'], 
                                              include_types=include_types)
                 
-                valid_movies = self.__filter_valid_items(movies)
+                valid_movies = self._filter_valid_items(movies)
                 valid_items.extend(valid_movies)
                 
                 if len(valid_items) >= required_items:
@@ -582,15 +582,15 @@ class GeneratorMixin:
         
         # 使用获取到的有效项目更新封面
         if len(valid_items) > 0:
-            if self.__is_single_image_style():
-                return self.__update_single_image(service, library, title, valid_items[0])
+            if self._is_single_image_style():
+                return self._update_single_image(service, library, title, valid_items[0])
             else:
-                return self.__update_grid_image(service, library, title, valid_items[:required_items])
+                return self._update_grid_image(service, library, title, valid_items[:required_items])
         else:
             print(f"媒体库 {service.name}：{library['Name']} 无法找到有效的图片项目")
             return False
 
-    def __handle_playlist_library(self, service, library, title):
+    def _handle_playlist_library(self, service, library, title):
         """ 
         播放列表图片获取 
         """
@@ -600,16 +600,16 @@ class GeneratorMixin:
         else:
             library_id = library.get("ItemId")
         parent_id = library_id
-        playlists = self.__get_items_batch(service, parent_id,
+        playlists = self._get_items_batch(service, parent_id,
                                       include_types=include_types)
         
-        required_items = self.__get_required_items()
+        required_items = self._get_required_items()
         valid_items = []
         
         # 首先检查 playlist 本身是否有合适的图片
         self._seen_keys = set()
 
-        valid_playlists = self.__filter_valid_items(playlists)
+        valid_playlists = self._filter_valid_items(playlists)
         valid_items.extend(valid_playlists)
         
         # 如果 playlist 本身没有足够的图片，则获取其中的电影
@@ -619,11 +619,11 @@ class GeneratorMixin:
                     break
                     
                 # 获取此 playlist 中的电影
-                movies = self.__get_items_batch(service,
+                movies = self._get_items_batch(service,
                                              parent_id=playlist['Id'], 
                                              include_types=include_types)
                 
-                valid_movies = self.__filter_valid_items(movies)
+                valid_movies = self._filter_valid_items(movies)
                 valid_items.extend(valid_movies)
                 
                 if len(valid_items) >= required_items:
@@ -631,15 +631,15 @@ class GeneratorMixin:
         
         # 使用获取到的有效项目更新封面
         if len(valid_items) > 0:
-            if self.__is_single_image_style():
-                return self.__update_single_image(service, library, title, valid_items[0])
+            if self._is_single_image_style():
+                return self._update_single_image(service, library, title, valid_items[0])
             else:
-                return self.__update_grid_image(service, library, title, valid_items[:required_items])
+                return self._update_grid_image(service, library, title, valid_items[:required_items])
         else:
             print(f"警告: 无法为播放列表 {service.name}：{library['Name']} 找到有效的图片项目")
             return False
 
-    def __build_content_key(self, item: dict) -> Optional[str]:
+    def _build_content_key(self, item: dict) -> Optional[str]:
         """构建内容去重Key，尽量让同一来源内容只入选一次。"""
         item_type = item.get("Type")
 
@@ -660,7 +660,7 @@ class GeneratorMixin:
 
         return None
 
-    def __build_image_key(self, image_url: str) -> Optional[str]:
+    def _build_image_key(self, image_url: str) -> Optional[str]:
         """构建图片去重Key，忽略api_key，避免同图重复。"""
         if not image_url:
             return None
@@ -680,22 +680,22 @@ class GeneratorMixin:
         except Exception:
             return f"img:{image_url}"
 
-    def __update_single_image(self, service, library, title, item):
+    def _update_single_image(self, service, library, title, item):
         """更新单图封面"""
         logger.info(f"媒体库 {service.name}：{library['Name']} 从媒体项获取图片")
         updated_item_id = ''
-        image_url = self.__get_image_url(item)
+        image_url = self._get_image_url(item)
         if not image_url:
             return False
             
-        image_path = self.__download_image(service, image_url, library['Name'], count=1)
+        image_path = self._download_image(service, image_url, library['Name'], count=1)
         if not image_path:
             return False
-        updated_item_id = self.__get_item_id(item)
+        updated_item_id = self._get_item_id(item)
         # 从配置获取背景颜色
-        title_result = self.__get_title_from_config(library['Name'])
+        title_result = self._get_title_from_config(library['Name'])
         config_bg_color = title_result[2] if len(title_result) == 3 else None
-        image_data = self.__generate_image_from_path(service.name, library['Name'], title, image_path, config_bg_color)
+        image_data = self._generate_image_from_path(service.name, library['Name'], title, image_path, config_bg_color)
             
         if not image_data:
             return False
@@ -712,7 +712,7 @@ class GeneratorMixin:
 
         return image_data
 
-    def __update_grid_image(self, service, library, title, items):
+    def _update_grid_image(self, service, library, title, items):
         """更新九宫格封面"""
         logger.info(f"媒体库 {service.name}：{library['Name']} 从媒体项获取图片")
 
@@ -723,21 +723,21 @@ class GeneratorMixin:
             if self._event.is_set():
                 logger.info("检测到停止信号，中断图片下载 ...")
                 return False
-            image_url = self.__get_image_url(item)
+            image_url = self._get_image_url(item)
             if image_url:
-                image_path = self.__download_image(service, image_url, library['Name'], count=i+1)
+                image_path = self._download_image(service, image_url, library['Name'], count=i+1)
                 if image_path:
                     image_paths.append(image_path)
-                    updated_item_ids.append(self.__get_item_id(item))
+                    updated_item_ids.append(self._get_item_id(item))
         
         if len(image_paths) < 1:
             return False
             
         # 生成九宫格图片
         # 从配置获取背景颜色
-        title_result = self.__get_title_from_config(library['Name'])
+        title_result = self._get_title_from_config(library['Name'])
         config_bg_color = title_result[2] if len(title_result) == 3 else None
-        image_data = self.__generate_image_from_path(service.name, library['Name'], title, None, config_bg_color)
+        image_data = self._generate_image_from_path(service.name, library['Name'], title, None, config_bg_color)
         if not image_data:
             return False
         if service.type == 'emby':
@@ -754,7 +754,7 @@ class GeneratorMixin:
             
         return image_data
 
-    def __load_title_config(self, yaml_str: str) -> dict:
+    def _load_title_config(self, yaml_str: str) -> dict:
         try:
             # 替换全角冒号为半角
             yaml_str = yaml_str.replace("：", ":")
@@ -820,7 +820,7 @@ class GeneratorMixin:
             logger.warning(f"YAML 解析失败，使用空配置: {e}")
             return {}
 
-    def __get_title_from_config(self, library_name):
+    def _get_title_from_config(self, library_name):
         """
         从 yaml 配置中获取媒体库的主副标题和背景颜色
         """
@@ -831,7 +831,7 @@ class GeneratorMixin:
         if self._current_config:
             title_config = self._current_config
         elif self._title_config:
-            title_config = self.__load_title_config(self._title_config)
+            title_config = self._load_title_config(self._title_config)
 
         # 添加调试信息
         logger.debug(f"查找媒体库名称: '{library_name}' (类型: {type(library_name)})")
@@ -870,7 +870,7 @@ class GeneratorMixin:
 
         return (zh_title, en_title, bg_color)
 
-    def __clean_generated_images(self):
+    def _clean_generated_images(self):
         removed = 0
         cache_dirs: List[Path] = []
         if self._covers_path:
@@ -901,7 +901,7 @@ class GeneratorMixin:
                     logger.warning(f"清理图片失败 {entry}: {e}")
         logger.info(f"清理图片完成（含旧版 covers 兼容目录），共清理 {removed} 项")
 
-    def __clean_downloaded_fonts(self):
+    def _clean_downloaded_fonts(self):
         if not self._font_path or not Path(self._font_path).exists():
             logger.info("清理字体：未找到字体目录，跳过")
             return
@@ -939,7 +939,7 @@ class GeneratorMixin:
             # 检查字体文件
             if not self._zh_font_path or not self._en_font_path:
                 logger.warning("字体文件缺失，尝试重新获取")
-                self.__get_fonts()
+                self._get_fonts()
 
             # 验证字体文件有效性
             if self._zh_font_path and not validate_font_file(Path(self._zh_font_path)):
@@ -957,7 +957,7 @@ class GeneratorMixin:
             logger.error(f"健康检查失败: {e}")
             return False
 
-    def __sanitize_filename(self, filename: str) -> str:
+    def _sanitize_filename(self, filename: str) -> str:
         """
         将媒体库名称转换为安全的文件名，特别处理数字或字母开头的名称
         """

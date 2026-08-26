@@ -114,7 +114,7 @@ except ImportError:
 
 
 class FontManagerMixin:
-    def __font_search_dirs(self) -> List[Path]:
+    def _font_search_dirs(self) -> List[Path]:
         dirs: List[Path] = []
         if self._font_path:
             dirs.append(Path(self._font_path))
@@ -131,11 +131,11 @@ class FontManagerMixin:
                 unique_dirs.append(directory)
         return unique_dirs
 
-    def __find_font_file(self, aliases: List[str], exts: List[str]) -> Optional[str]:
+    def _find_font_file(self, aliases: List[str], exts: List[str]) -> Optional[str]:
         normalized_aliases = [item.lower() for item in aliases if item]
         normalized_aliases_compact = [re.sub(r'[\s_\-]+', '', item) for item in normalized_aliases]
         normalized_exts = [item.lower() for item in exts]
-        for directory in self.__font_search_dirs():
+        for directory in self._font_search_dirs():
             candidates = sorted(directory.iterdir(), key=lambda p: p.name.lower())
             for font_file in candidates:
                 if not font_file.is_file():
@@ -154,7 +154,7 @@ class FontManagerMixin:
                     return str(font_file)
         return None
 
-    def __get_font_presets(self) -> Tuple[List[Dict[str, str]], List[Dict[str, str]], Dict[str, Optional[str]], Dict[str, Optional[str]]]:
+    def _get_font_presets(self) -> Tuple[List[Dict[str, str]], List[Dict[str, str]], Dict[str, Optional[str]], Dict[str, Optional[str]]]:
         zh_specs = [
             {"title": "潮黑", "value": "chaohei", "aliases": ["chaohei", "wendao", "潮黑", "chao_hei"]},
             {"title": "粗雅宋", "value": "yasong", "aliases": ["yasong", "粗雅宋", "multi_1_zh", "ya_song"]},
@@ -195,16 +195,16 @@ class FontManagerMixin:
         en_exts = [".ttf", ".otf", ".woff2", ".woff"]
 
         for spec in all_specs:
-            found = self.__find_font_file(spec["aliases"], zh_exts)
+            found = self._find_font_file(spec["aliases"], zh_exts)
             zh_paths[spec["value"]] = found
             zh_items.append({"title": spec["title"], "value": spec["value"]})
         for spec in all_specs:
-            found = self.__find_font_file(spec["aliases"], en_exts)
+            found = self._find_font_file(spec["aliases"], en_exts)
             en_paths[spec["value"]] = found
             en_items.append({"title": spec["title"], "value": spec["value"]})
         return zh_items, en_items, zh_paths, en_paths
 
-    def __get_fonts(self):
+    def _get_fonts(self):
         def detect_string_type(s: str):
             if not s:
                 return None
@@ -223,7 +223,7 @@ class FontManagerMixin:
         font_dir_path = self._font_path
         Path(font_dir_path).mkdir(parents=True, exist_ok=True)
 
-        _, _, zh_preset_paths, en_preset_paths = self.__get_font_presets()
+        _, _, zh_preset_paths, en_preset_paths = self._get_font_presets()
 
         if not self._zh_font_preset:
             self._zh_font_preset = "chaohei"

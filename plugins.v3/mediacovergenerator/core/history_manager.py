@@ -114,7 +114,7 @@ except ImportError:
 
 
 class HistoryManagerMixin:
-    def __get_recent_generated_covers(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def _get_recent_generated_covers(self, limit: int = 20) -> List[Dict[str, Any]]:
         items: List[Dict[str, Any]] = []
         cover_dirs: List[Path] = []
 
@@ -174,7 +174,7 @@ class HistoryManagerMixin:
                             "path": str(file_path),
                             "mtime_ts": float(stat.st_mtime),
                             "mtime": datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                            "size": self.__format_size(stat.st_size),
+                            "size": self._format_size(stat.st_size),
                             "src": image_src,
                         }
                     )
@@ -185,7 +185,7 @@ class HistoryManagerMixin:
         return items[:max(1, int(limit))]
 
     @staticmethod
-    def __format_size(size_bytes: int) -> str:
+    def _format_size(size_bytes: int) -> str:
         try:
             size = float(size_bytes)
         except (TypeError, ValueError):
@@ -197,7 +197,7 @@ class HistoryManagerMixin:
             size /= 1024
         return f"{int(size_bytes)} B"
 
-    def __get_saved_cover_dirs(self) -> List[Path]:
+    def _get_saved_cover_dirs(self) -> List[Path]:
         result: List[Path] = []
         if self._covers_output:
             result.append(Path(self._covers_output))
@@ -214,14 +214,14 @@ class HistoryManagerMixin:
             unique.append(directory)
         return unique
 
-    def __resolve_saved_cover_path(self, raw_path: str) -> Optional[Path]:
+    def _resolve_saved_cover_path(self, raw_path: str) -> Optional[Path]:
         if not raw_path:
             return None
         decoded = unquote(str(raw_path)).strip()
         target = Path(decoded).expanduser()
         if not target.is_absolute():
             return None
-        allowed_dirs = self.__get_saved_cover_dirs()
+        allowed_dirs = self._get_saved_cover_dirs()
         for directory in allowed_dirs:
             try:
                 root = directory.resolve()
@@ -232,12 +232,12 @@ class HistoryManagerMixin:
                 continue
         return None
 
-    def __get_recent_cover_output_dir(self) -> Path:
+    def _get_recent_cover_output_dir(self) -> Path:
         if self._covers_output:
             return Path(self._covers_output).expanduser()
         return self.get_data_path() / "output"
 
-    def __save_image_to_local(self, image_content, server_name: str, library_name: str, extension: str):
+    def _save_image_to_local(self, image_content, server_name: str, library_name: str, extension: str):
         """
         保存图片到本地路径
         """
@@ -245,11 +245,11 @@ class HistoryManagerMixin:
             if not self._save_recent_covers:
                 return
             # 确保目录存在
-            local_path = str(self.__get_recent_cover_output_dir())
+            local_path = str(self._get_recent_cover_output_dir())
             os.makedirs(local_path, exist_ok=True)
 
-            safe_server = self.__sanitize_filename(server_name) or "server"
-            safe_library = self.__sanitize_filename(library_name) or "library"
+            safe_server = self._sanitize_filename(server_name) or "server"
+            safe_library = self._sanitize_filename(library_name) or "library"
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             ext = extension.strip(".").lower() if extension else "jpg"
             filename = f"{safe_server}_{safe_library}_{timestamp}.{ext}"
@@ -258,12 +258,12 @@ class HistoryManagerMixin:
             with open(file_path, "wb") as f:
                 f.write(image_content)
             logger.info(f"图片已保存到本地: {file_path}")
-            self.__trim_saved_cover_history(local_path, safe_server, safe_library)
+            self._trim_saved_cover_history(local_path, safe_server, safe_library)
         except Exception as err:
             logger.error(f"保存图片到本地失败: {str(err)}")
 
-    def __trim_saved_cover_history(self, local_path: str, safe_server: str, safe_library: str):
-        limit = self.__clamp_value(
+    def _trim_saved_cover_history(self, local_path: str, safe_server: str, safe_library: str):
+        limit = self._clamp_value(
             self._covers_history_limit_per_library,
             1,
             100,

@@ -114,7 +114,7 @@ except ImportError:
 
 
 class MediaFetcherMixin:
-    def __get_items_batch(self, service, parent_id, offset=0, limit=20, include_types=None):
+    def _get_items_batch(self, service, parent_id, offset=0, limit=20, include_types=None):
         # 调用API获取项目
         try:
             if not service:
@@ -149,21 +149,21 @@ class MediaFetcherMixin:
             logger.error(f"Failed to get latest items: {str(err)}")
             return []
 
-    def __filter_valid_items(self, items):
+    def _filter_valid_items(self, items):
         """筛选有效的项目（包含所需图片的项目），并按图片标签去重"""
         valid_items = []
 
         for item in items:
             # 1) 根据当前样式计算真实会使用的图片URL
-            image_url = self.__get_image_url(item)
+            image_url = self._get_image_url(item)
             if not image_url:
                 continue
 
             # 2) 两层去重：
             #    - content_key: 内容层（如同一剧集的多集使用同一Series图）
             #    - image_key:   图片层（同一图片tag或同一路径）
-            content_key = self.__build_content_key(item)
-            image_key = self.__build_image_key(image_url)
+            content_key = self._build_content_key(item)
+            image_key = self._build_image_key(image_url)
 
             if not content_key and not image_key:
                 continue
@@ -180,7 +180,7 @@ class MediaFetcherMixin:
 
         return valid_items
 
-    def __get_server_libraries(self, service):
+    def _get_server_libraries(self, service):
         try:
             if not service:
                 return []
@@ -203,10 +203,10 @@ class MediaFetcherMixin:
             logger.error(f"获取媒体库列表失败：{str(err)}")
             return []
 
-    def __get_all_libraries(self, server, service):
+    def _get_all_libraries(self, server, service):
         try:
             lib_items = []
-            libraries = self.__get_server_libraries(service)
+            libraries = self._get_server_libraries(service)
             for library in libraries:
                 if service.type == 'emby':
                     library_id = library.get("Id")
@@ -223,7 +223,7 @@ class MediaFetcherMixin:
             logger.error(f"获取所有媒体库失败：{str(err)}")
             return []
 
-    def __get_image_url(self, item):
+    def _get_image_url(self, item):
         """
         从媒体项信息中获取图片URL
         """
@@ -334,7 +334,7 @@ class MediaFetcherMixin:
                     tag = item.get("ImageTags").get("Primary")
                     return f'[HOST]emby/Items/{item_id}/Images/Primary?tag={tag}&api_key=[APIKEY]'
 
-    def __get_item_id(self, item):
+    def _get_item_id(self, item):
         """
         从媒体项信息中获取项目ID
         """
@@ -377,7 +377,7 @@ class MediaFetcherMixin:
 
         return item_id
 
-    def __download_image(self, service, imageurl, library_name, count=None, retries=3, delay=1):
+    def _download_image(self, service, imageurl, library_name, count=None, retries=3, delay=1):
         """
         下载图片，保存到本地目录 self._covers_path/library_name/ 下，文件名为 1-9.jpg
         若已存在则跳过下载，直接返回图片路径。
@@ -385,7 +385,7 @@ class MediaFetcherMixin:
         """
         try:
             # 确保媒体库名称是安全的文件名（处理数字或字母开头的名称）
-            safe_library_name = self.__sanitize_filename(library_name)
+            safe_library_name = self._sanitize_filename(library_name)
 
             # 创建目标子目录
             subdir = os.path.join(self._covers_path, safe_library_name)
@@ -437,7 +437,7 @@ class MediaFetcherMixin:
             logger.error(f"下载图片异常：{str(err)}")
             return None
 
-    def __set_library_image(self, service, library, image_base64):
+    def _set_library_image(self, service, library, image_base64):
         """
         设置媒体库封面
         """
@@ -470,7 +470,7 @@ class MediaFetcherMixin:
             if self._save_recent_covers:
                 try:
                     image_bytes = base64.b64decode(image_base64)
-                    self.__save_image_to_local(image_bytes, service.name, library['Name'], extension)
+                    self._save_image_to_local(image_bytes, service.name, library['Name'], extension)
                 except Exception as save_err:
                     logger.error(f"保存发送前图片失败: {str(save_err)}")
             
