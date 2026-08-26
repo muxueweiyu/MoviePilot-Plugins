@@ -2138,7 +2138,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         recent_covers = self._get_recent_generated_covers(limit=limit)
         if recent_covers:
             for item in recent_covers:
-                delete_api = f"plugin/MediaCoverGenerator/delete_saved_cover?file={quote(item['path'])}"
+                delete_api = f"plugin/MediaCoverGenerator/delete_saved_cover?file={quote(item['path'])}&apikey={settings.API_TOKEN}"
                 cover_rows.append(
                     {
                         "component": "VCol",
@@ -2276,7 +2276,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "prepend-icon": "mdi-swap-horizontal",
                                 },
                                 "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
+                                "events": {"click": {"api": f"plugin/MediaCoverGenerator/toggle_style_variant?apikey={settings.API_TOKEN}", "method": "get"}},
                             },
                             {
                                 "component": "VBtn",
@@ -2287,7 +2287,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "prepend-icon": "mdi-play-circle-outline",
                                 },
                                 "text": "立即生成当前风格",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
+                                "events": {"click": {"api": f"plugin/MediaCoverGenerator/generate_now?apikey={settings.API_TOKEN}", "method": "get"}},
                             },
                             {
                                 "component": "div",
@@ -2370,7 +2370,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "class": "mr-3 mb-2 text-none",
                                 },
                                 "text": "立即清理图片缓存",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_images", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
+                                "events": {"click": {"api": f"plugin/MediaCoverGenerator/clean_images?apikey={settings.API_TOKEN}", "method": "get"}},
                             },
                             {
                                 "component": "VBtn",
@@ -2381,7 +2381,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "class": "mr-3 mb-2 text-none",
                                 },
                                 "text": "立即清理字体缓存",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_fonts", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
+                                "events": {"click": {"api": f"plugin/MediaCoverGenerator/clean_fonts?apikey={settings.API_TOKEN}", "method": "get"}},
                             },
                             {
                                 "component": "div",
@@ -2419,9 +2419,8 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                             },
                             "events": {
                                 "click": {
-                                    "api": f"plugin/MediaCoverGenerator/select_style_{style['index']}",
-                                    "method": "post",
-                                    "params": {"apikey": settings.API_TOKEN},
+                                    "api": f"plugin/MediaCoverGenerator/select_style_{style['index']}?apikey={settings.API_TOKEN}",
+                                    "method": "get",
                                 }
                             },
                             "content": [
