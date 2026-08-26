@@ -1,0 +1,3 @@
+"""
+MediaCoverGenerator Styles Package
+"""
