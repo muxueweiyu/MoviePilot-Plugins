@@ -590,7 +590,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             {"path": "saved_cover_image", "endpoint": self.api_saved_cover_image, "methods": ["GET"], "summary": "获取已保存封面图片(兼容)"},
         ]
 
-    def api_clean_images(self):
+    def api_clean_images(self, apikey: str = "", **kwargs):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理图片缓存请求")
             self._clean_generated_images()
@@ -601,7 +601,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】立即清理图片失败: {e}", exc_info=True)
             return self._api_response(1, f"图片缓存清理失败: {e}")
 
-    def api_clean_fonts(self):
+    def api_clean_fonts(self, apikey: str = "", **kwargs):
         try:
             logger.info("【MediaCoverGenerator】收到立即清理字体缓存请求")
             self._clean_downloaded_fonts()
@@ -612,7 +612,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】立即清理字体失败: {e}", exc_info=True)
             return self._api_response(1, f"字体缓存清理失败: {e}")
 
-    def api_delete_saved_cover(self, file: str = ""):
+    def api_delete_saved_cover(self, file: str = "", apikey: str = "", **kwargs):
         try:
             target_file = self._resolve_saved_cover_path(file)
             if not target_file:
@@ -626,7 +626,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】删除封面文件失败: {e}", exc_info=True)
             return self._api_response(1, f"封面文件删除失败: {e}")
 
-    def api_generate_now(self, style: str = ""):
+    def api_generate_now(self, style: str = "", apikey: str = "", **kwargs):
         old_style = self._cover_style
         try:
             if not self._enabled:
@@ -657,7 +657,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         finally:
             self._cover_style = old_style
 
-    def api_set_cover_style(self, style: str = ""):
+    def api_set_cover_style(self, style: str = "", apikey: str = "", **kwargs):
         try:
             target_style = (style or "").strip()
             allowed_styles = {
@@ -697,7 +697,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         self._update_config()
         logger.info(f"【MediaCoverGenerator】已保存封面风格: {target_style}")
 
-    def api_toggle_style_variant(self):
+    def api_toggle_style_variant(self, apikey: str = "", **kwargs):
         try:
             variant, index = self._get_cover_style_parts()
             new_variant = "animated" if variant == "static" else "static"
@@ -716,16 +716,16 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
             logger.error(f"【MediaCoverGenerator】选择风格失败: {e}", exc_info=True)
             return self._api_response(1, f"选择风格失败: {e}")
 
-    def api_select_style_1(self):
+    def api_select_style_1(self, apikey: str = "", **kwargs):
         return self._api_select_style(1)
 
-    def api_select_style_2(self):
+    def api_select_style_2(self, apikey: str = "", **kwargs):
         return self._api_select_style(2)
 
-    def api_select_style_3(self):
+    def api_select_style_3(self, apikey: str = "", **kwargs):
         return self._api_select_style(3)
 
-    def api_select_style_4(self):
+    def api_select_style_4(self, apikey: str = "", **kwargs):
         return self._api_select_style(4)
 
     def _set_page_tab(self, tab: str):
@@ -744,7 +744,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
         self._set_page_tab("clean-tab")
         return self._api_response(0, "已切换到清理缓存")
 
-    def api_saved_cover_image(self, file: str = ""):
+    def api_saved_cover_image(self, file: str = "", apikey: str = "", **kwargs):
         target_file = self._resolve_saved_cover_path(file)
         if not target_file or not target_file.exists() or not target_file.is_file():
             return self._api_response(1, "图片不存在")
@@ -2205,6 +2205,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                                                     "click": {
                                                                         "api": delete_api,
                                                                         "method": "post",
+                                                                        "params": {"apikey": settings.API_TOKEN},
                                                                     }
                                                                 },
                                                             }
@@ -2275,7 +2276,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "prepend-icon": "mdi-swap-horizontal",
                                 },
                                 "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
                             },
                             {
                                 "component": "VBtn",
@@ -2286,7 +2287,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "prepend-icon": "mdi-play-circle-outline",
                                 },
                                 "text": "立即生成当前风格",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
                             },
                             {
                                 "component": "div",
@@ -2369,7 +2370,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "class": "mr-3 mb-2 text-none",
                                 },
                                 "text": "立即清理图片缓存",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_images", "method": "post"}},
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_images", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
                             },
                             {
                                 "component": "VBtn",
@@ -2380,7 +2381,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                     "class": "mr-3 mb-2 text-none",
                                 },
                                 "text": "立即清理字体缓存",
-                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_fonts", "method": "post"}},
+                                "events": {"click": {"api": "plugin/MediaCoverGenerator/clean_fonts", "method": "post", "params": {"apikey": settings.API_TOKEN}}},
                             },
                             {
                                 "component": "div",
@@ -2420,6 +2421,7 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
                                 "click": {
                                     "api": f"plugin/MediaCoverGenerator/select_style_{style['index']}",
                                     "method": "post",
+                                    "params": {"apikey": settings.API_TOKEN},
                                 }
                             },
                             "content": [
