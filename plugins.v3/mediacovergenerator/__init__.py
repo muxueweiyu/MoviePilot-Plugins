@@ -118,7 +118,7 @@ from .core.media_fetcher import MediaFetcherMixin
 from .core.generator import GeneratorMixin
 from .core.api import ApiManagerMixin
 
-class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, MediaFetcherMixin, GeneratorMixin, ApiManagerMixin):
+class MediaCoverGenerator(ApiManagerMixin, FontManagerMixin, HistoryManagerMixin, MediaFetcherMixin, GeneratorMixin, _PluginBase):
     # 插件名称
     plugin_name = "Emby媒体库封面生成"
     # 插件描述
@@ -530,6 +530,12 @@ class MediaCoverGenerator(_PluginBase, FontManagerMixin, HistoryManagerMixin, Me
 
     def get_state(self) -> bool:
         return self._enabled
+
+    def get_api(self) -> List[Dict[str, Any]]:
+        """
+        获取插件API
+        """
+        return ApiManagerMixin.get_api(self)
 
 
 
