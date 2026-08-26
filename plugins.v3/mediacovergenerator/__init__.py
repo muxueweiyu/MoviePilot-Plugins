@@ -682,10 +682,8 @@ class MediaCoverGenerator(_PluginBase):
     @staticmethod
     def _api_response(code: int, msg: str, data: Any = None) -> Dict[str, Any]:
         return {
-            "code": code,
-            "msg": msg,
             "success": code == 0,
-            "message": msg,
+            "message": msg or "",
             "data": data,
         }
 
